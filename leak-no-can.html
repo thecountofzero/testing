@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Memory Leak Test - No CanJS</title>
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+</head>
+<body>
+	<div id="dummy">
+		Click "Initialize" to initialize test app<br/><br/>
+	    <button class="init">Initialize</button>
+	    <button class="fetch">Fetch From Server</button>
+	    <button class="poll">Start Polling</button>
+	    <button class="stop">Stop Polling</button><br/><br/>
+	    <div class="data"></div>
+	</div>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+
+	<script type='text/javascript'>
+
+		$(document).ready(function() {
+
+		    var timerId;
+
+			$('.init').click(function() {
+
+				// Fetch stats
+				$.getJSON('stats.json?'+(new Date()).getTime(), function(json) {
+
+					// Append the results to the DOM
+					for(var i=0; i<json.length; ++i) {
+						$('.data').append('<div>Name: ' + json[i].name + ': ' + json[i].homeruns + ' (' + (json[i].hits / json[i].atbats).toFixed(3) + ')<div>');
+					}
+				});
+			});
+
+			$('.fetch').click(function() {
+
+				// Fetch fresh data
+				$.getJSON('stats.json?'+(new Date()).getTime(), function(json) {
+
+					// Empty the existing stats data that's in the DOM
+					$('.data').empty();
+
+					// Append the results to the DOM
+					for(var i=0; i<json.length; ++i) {
+						json[i].homeruns = Math.floor(Math.random() * 60 + 1);
+						$('.data').append('<div>Name: ' + json[i].name + ': ' + json[i].homeruns + ' (' + (json[i].hits / json[i].atbats).toFixed(3) + ')<div>');
+					}
+				});
+			});
+
+			// Function used when polling pops
+			var pollingFunction = function() {
+
+				// Fetch stats data
+				$.getJSON('stats.json?'+(new Date()).getTime(), function(json) {
+
+					// Empty the existing stats data that's in the DOM
+					$('.data').empty();
+
+					for(var i=0; i<json.length; ++i) {
+						json[i].homeruns = Math.floor(Math.random() * 60 + 1);
+						$('.data').append('<div>Name: ' + json[i].name + ': ' + json[i].homeruns + ' (' + (json[i].hits / json[i].atbats).toFixed(3) + ')<div>');
+					}
+
+					// Store the timer ID in case we want to kill it
+					timerId = setTimeout(pollingFunction, 5000);
+				});
+			};
+
+			$('.poll').click(function() {
+				pollingFunction();
+			});
+
+			$('.stop').click(function() {
+				clearTimeout(timerId);
+			});
+
+		});
+	</script>
+</body>
+</html>

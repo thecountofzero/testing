@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>CloudArray - Status Panel</title>
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+</head>
+<body>
+	<div id="dummy">
+	    <button class="setup">Setup Live Binding</button>
+	    <button class="addHomer">Add Homer</button>
+	    <button class="poll">Start Polling</button>
+	    <button class="stop">Stop Polling</button>
+	    <div></div>
+	</div>
+	<script id="dummyEJS" type="text/ejs">
+	    Name: <%= player.attr("name") %><br/>
+	    Team: <%= player.attr("team") %><br/>
+	    Home Runs: <%= player.attr("homeruns") %>
+	</script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+	<script src="http://canjs.com/release/latest/can.jquery.js"></script>
+	<script src="http://canjs.com/release/latest/can.construct.proxy.js"></script>
+
+	<script type='text/javascript'>
+
+		$(document).ready(function() {
+			
+			Dummy = can.Control({
+		        init: function (element, options) {
+		            this.player = new can.Observe({
+		                "name": "Ryan Braun",
+		                "homeruns": 33,
+		                "team": "Brewers",
+		                "hits": 12
+		            });
+		        },
+		        '.setup click': function (el, ev) {
+		            this.element.find('div').append(can.view('dummyEJS', {
+		                player: this.player
+		            }));
+		        },
+		        '.addHomer click': function (el, ev) {
+		            this.player.attr('homeruns', this.player.attr('homeruns') + 1);
+		        },
+		        '.poll click': function (el, ev) {
+		            this.poll();
+		        },
+		        '.stop click': function (el, ev) {
+		            clearTimeout(this.timeoutId);
+		        },
+		        poll: function () {
+		            this.player.attr('homeruns', this.player.attr('homeruns') + 1);
+		            this.player.attr('atbats', this.player.attr('hits') + 3);
+		            this.timeoutId = setTimeout(this.proxy('poll'), 3000);
+		        }
+		    });
+
+		    new Dummy('#dummy');
+
+		});
+	</script>
+</body>
+</html>

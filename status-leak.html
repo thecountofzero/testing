@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Memory Leak Test</title>
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+	<style>
+		.statusPanel {
+		    text-align: center;
+		    padding: 15px 0 23px 0;
+		    font-family: 'Cuprum', sans-serif;
+		    text-transform: capitalize;
+		}
+		.statusPanel ul li {
+		    display: inline-block;
+		    margin: 11px 5px 0 5px;
+		    width: 125px;
+		    text-align: center;
+		}
+		.statusPanel ul li div {
+		    display: block;
+		    font-weight: bold;
+		    white-space: nowrap;
+		    color: #626262;
+		    height: 45px;
+		    width: 45px;
+		    border-radius: 100%;
+		    opacity: 0.6;
+		    margin: 0 auto 2px;
+		}
+
+		.ball {
+		    width: 45;
+		    height: 45;
+		    border-radius: 100%;
+
+		    /*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bbbbbb', endColorstr='#777777',GradientType=0 );*/
+		    box-shadow: inset 0 -5px 15px rgba(0,0,0,0.4), 
+		                inset -2px -1px 100px rgba(0,0,0,0.4), 
+		                0 0 10px #000;   
+		    position: relative;
+		    top: 0; 
+		    z-index: 11;
+		    border-top: 2px solid #ababab;
+		    border-right: 2px solid #ababab;
+		    border-bottom: 2px solid #ababab;
+		    border-left: 2px solid #ababab;
+		}
+
+		.ball::after {
+		    content: "";
+		    width: 26px; 
+		    height: 13px; 
+		    position: absolute;
+		    left: 10px;
+		    top: 3px;
+		    z-index: 10;
+		    background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2U4ZThlOCIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjElIiBzdG9wLWNvbG9yPSIjZThlOGU4IiBzdG9wLW9wYWNpdHk9IjEiLz4KICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ1cmwoI2dyYWQtdWNnZy1nZW5lcmF0ZWQpIiAvPgo8L3N2Zz4=);
+		    background: -moz-linear-gradient(top,  rgba(232,232,232,1) 0%, rgba(232,232,232,1) 1%, rgba(255,255,255,0) 100%);
+		    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(232,232,232,1)), color-stop(1%,rgba(232,232,232,1)), color-stop(100%,rgba(255,255,255,0)));
+		    background: -webkit-linear-gradient(top,  rgba(232,232,232,1) 0%,rgba(232,232,232,1) 1%,rgba(255,255,255,0) 100%);
+		    background: -o-linear-gradient(top,  rgba(232,232,232,1) 0%,rgba(232,232,232,1) 1%,rgba(255,255,255,0) 100%);
+		    background: -ms-linear-gradient(top,  rgba(232,232,232,1) 0%,rgba(232,232,232,1) 1%,rgba(255,255,255,0) 100%);
+		    background: linear-gradient(top,  rgba(232,232,232,1) 0%,rgba(232,232,232,1) 1%,rgba(255,255,255,0) 100%);
+		    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e8e8e8', endColorstr='#00ffffff',GradientType=0 );
+		    border-radius: 13px / 6px;
+		}
+
+		.statusOk {
+		    background: rgb(32, 178, 32);
+		    /*background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2JiYmJiYiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9Ijk5JSIgc3RvcC1jb2xvcj0iIzc3Nzc3NyIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ1cmwoI2dyYWQtdWNnZy1nZW5lcmF0ZWQpIiAvPgo8L3N2Zz4=);*/
+		    background: -moz-linear-gradient(top,  rgba(32,238,32,1) 0%, rgba(32,29,32,1) 99%);
+		    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(32,238,32,1)), color-stop(99%,rgba(32,29,32,1)));
+		    background: -webkit-linear-gradient(top,  rgba(32,238,32,1) 0%,rgba(32,29,32,1) 99%);
+		    background: -o-linear-gradient(top,  rgba(32,238,32,1) 0%,rgba(32,29,32,1) 99%);
+		    background: -ms-linear-gradient(top,  rgba(32,238,32,1) 0%,rgba(32,29,32,1) 99%);
+		    background: linear-gradient(top,  rgba(32,238,32,1) 0%,rgba(32,29,32,1) 99%);
+		}
+
+		.statusOk:hover {
+		    background: -moz-linear-gradient(top,  rgba(32,238,32,0.8) 0%, rgba(32,29,32,1) 99%);
+		    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(32,238,32,0.8)), color-stop(99%,rgba(32,29,32,1)));
+		    background: -webkit-linear-gradient(top,  rgba(32,238,32,0.8) 0%,rgba(32,29,32,1) 99%);
+		    background: -o-linear-gradient(top,  rgba(32,238,32,0.8) 0%,rgba(32,29,32,1) 99%);
+		    background: -ms-linear-gradient(top,  rgba(32,238,32,0.8) 0%,rgba(32,29,32,1) 99%);
+		    background: linear-gradient(top,  rgba(32,238,32,0.8) 0%,rgba(32,29,32,1) 99%);
+		}
+
+		.statusErr {
+		    background: rgb(251, 49, 40);
+		    background: -moz-linear-gradient(top,  rgba(251,49,40,0.8) 0%, rgba(171,9,40,1) 99%);
+		    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(251,49,40,0.8)), color-stop(99%,rgba(171,9,40,1)));
+		    background: -webkit-linear-gradient(top,  rgba(251,49,40,0.8) 0%,rgba(171,9,40,1) 99%);
+		    background: -o-linear-gradient(top,  rgba(251,49,40,0.8) 0%,rgba(171,9,40,1) 99%);
+		    background: -ms-linear-gradient(top,  rgba(251,49,40,0.8) 0%,rgba(171,9,40,1) 99%);
+		    background: linear-gradient(top,  rgba(251,49,40,0.8) 0%,rgba(171,9,40,1) 99%);
+		}
+
+		.statusErr:hover {
+		    background: -moz-linear-gradient(top,  rgba(251,49,40,1) 0%, rgba(171,49,40,1) 99%);
+		    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(251,49,40,1)), color-stop(99%,rgba(171,49,40,1)));
+		    background: -webkit-linear-gradient(top,  rgba(251,49,40,1) 0%,rgba(171,49,40,1) 99%);
+		    background: -o-linear-gradient(top,  rgba(251,49,40,1) 0%,rgba(171,49,40,1) 99%);
+		    background: -ms-linear-gradient(top,  rgba(251,49,40,1) 0%,rgba(171,49,40,1) 99%);
+		    background: linear-gradient(top,  rgba(251,49,40,1) 0%,rgba(171,49,40,1) 99%);
+		}
+
+		.statusWarn {
+		    background: rgb(255, 197, 51);
+		    background: -moz-linear-gradient(top,  rgba(283,130,0,1) 0%, rgba(183,130,0,1) 99%);
+		    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(283,130,0,1)), color-stop(99%,rgba(183,130,0,1)));
+		    background: -webkit-linear-gradient(top,  rgba(283,130,0,1) 0%,rgba(183,130,0,1) 99%);
+		    background: -o-linear-gradient(top,  rgba(283,130,0,1) 0%,rgba(183,130,0,1) 99%);
+		    background: -ms-linear-gradient(top,  rgba(283,130,0,1) 0%,rgba(183,130,0,1) 99%);
+		    background: linear-gradient(top,  rgba(283,130,0,1) 0%,rgba(183,130,0,1) 99%);
+		}
+
+		.statusWarn:hover {
+		    background: -moz-linear-gradient(top,  rgba(283,130,0,0.8) 0%, rgba(183,130,0,1) 99%);
+		    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(283,130,0,0.8)), color-stop(99%,rgba(183,130,0,1)));
+		    background: -webkit-linear-gradient(top,  rgba(283,130,0,0.8) 0%,rgba(183,130,0,1) 99%);
+		    background: -o-linear-gradient(top,  rgba(283,130,0,0.8) 0%,rgba(183,130,0,1) 99%);
+		    background: -ms-linear-gradient(top,  rgba(283,130,0,0.8) 0%,rgba(183,130,0,1) 99%);
+		    background: linear-gradient(top,  rgba(283,130,0,0.8) 0%,rgba(183,130,0,1) 99%);
+		}
+	</style>
+</head>
+<body>
+	<div id="dummy"></div>
+
+	<script id="statusPanelEJS" type="text/ejs">
+	    <article class="statusPanel">
+	        <ul>
+	            <% statuses.each( function(status) { %>
+	                <li>
+	                    <div class="ball <%= status.attr('statusClass') %>"></div>
+	                    <h5><%= status.attr('name') %></h5>
+	                </li>
+	            <% }) %>
+	        </ul>
+	        <div class="clear"></div><br/>
+	        <button class="destroy">destroy</button>
+	    </article>
+	</script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+	<script src="http://canjs.com/release/latest/can.jquery.js"></script>
+	<script src="http://canjs.com/release/latest/can.construct.proxy.js"></script>
+	<script src="http://canjs.com/release/latest/can.observe.setter.js"></script>
+	<script src="http://canjs.com/release/latest/can.fixture.js"></script>
+
+	<script type='text/javascript'>
+
+		$(document).ready(function() {
+		    
+		    Status = can.Model({
+		        id: "name",
+		        findAll: "GET /statuses"
+		    }, {
+		        setStatus: function(status) {
+
+					this.attr('statusClass', status==='normal' ? 'statusOk' : status==='warning' ? 'statusWarn' : 'statusErr');
+		            return status;
+				}
+		    });
+		    
+		    var STATUSES = [{
+		        "status": "normal",
+		        "name": "health",
+		        "description": "full health"
+		    }, {
+		        "status": "normal",
+		        "name": "magic",
+		        "description": "strong magic"
+		    }, {
+		        "status": "warning",
+		        "name": "food",
+		        "description": "low on food"
+		    }, {
+		        "status": "error",
+		        "name": "shield",
+		        "description": "you have lost your shield"
+		    }];
+		    
+		    can.fixture('GET /statuses', function() { return STATUSES; });
+		    
+		    StatusControl = can.Control({
+
+		    	init : function() {
+					var self = this;
+
+					// Declare a default list of statuses and then merge in the retrieved results
+					// In case the call to Ariel doesn't return them all this will ensure we still display them all
+					this.statuses = new Status.List();
+					this.statuses.push(new Status({'name': 'health'}));
+					this.statuses.push(new Status({'name': 'magic'}));
+					this.statuses.push(new Status({'name': 'food'}));
+					this.statuses.push(new Status({'name': 'shield'}));
+
+					this.options.statuses = this.statuses;
+
+					// Rebind the control's event handlers
+					this.on();
+
+					// Append the html to the DOM
+					this.element.append(can.view('statusPanelEJS', {
+						statuses: this.statuses
+					}));
+
+					can.when(Status.findAll()).then(function(statuses) {
+
+						// Update the control's list of statuses
+						self.statuses = statuses;
+
+						// Initialize polling
+						self._poll();
+					});
+				},
+
+				_poll: function() {
+					var self = this;
+
+					can.when(Status.findAll({
+						polling: 'true'
+					})).done(function(statuses) {
+
+						// Update the control's copy of statuses
+						self.statuses = statuses;
+
+					}).fail(function(statuses) {
+
+						// Set all statues to error since we don't know since the request to Ariel failed
+						self.statuses.each(function(s) {
+							s.attr('status', 'error');
+							s.attr('description', msg);
+						});
+					}).always(function() {
+						self.timeoutId = setTimeout(self.proxy('_poll'), 5000);
+					});
+				},
+
+				'{statuses} change': function(StatusList, ev, attr, changeType, newVal, oldVal) {
+					// Do what you want when you get a change
+				},
+
+				".destroy click": function() {
+		            this.element.remove();
+		        },
+
+		        destroy: function() {
+		            
+		            console.log("destroying...");
+
+		            // Cancel the polling
+		            clearTimeout(this.timeoutId);
+
+		            this.statuses = null;
+
+		            this.element.empty();
+
+		            can.Control.prototype.destroy.call(this);
+		        }
+			});
+
+		    new StatusControl('#dummy');
+
+		});
+	</script>
+</body>
+</html>

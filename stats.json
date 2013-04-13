@@ -1,0 +1,16 @@
+[
+    {
+    	"id": 0,
+        "name": "Ryan Braun",
+        "homeruns": 2,
+        "atbats": 20,
+        "hits": 12
+    },
+    {
+    	"id": 1,
+        "name": "Troy Tulowitzki",
+        "homeruns": 4,
+        "atbats": 20,
+        "hits": 8
+    }
+]

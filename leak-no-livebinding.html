@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Memory Leak Test</title>
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+</head>
+<body>
+	<div id="dummy">
+		Click "Setup Live Binding" to initialize live binding<br/><br/>
+	    <!--<button class="setup">Setup Live Binding</button>-->
+	    <button class="addHomer">Add Homer</button>
+	    <button class="fetch">Fetch From Server</button>
+	    <button class="poll">Start Polling</button>
+	    <button class="stop">Stop Polling</button><br/><br/>
+	    <div class="data"></div>
+	</div>
+
+	<script id="dummyEJS" type="text/ejs">
+	    <% stats.each(function(s) { %>
+	        Name: <%= s.name %>: <%= s.homeruns %> (<%= s.getAverage() %>)<br/>
+	    <% }) %>
+	</script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+	<script src="http://canjs.com/release/latest/can.jquery.js"></script>
+	<script src="http://canjs.com/release/latest/can.construct.proxy.js"></script>
+	<script src="http://canjs.com/release/latest/can.fixture.js"></script>
+
+	<script type='text/javascript'>
+
+		$(document).ready(function() {
+
+		    Stat = can.Model({
+		        id: "name",
+		        findAll: {
+		        	url: "stats.json",
+		        	cache: false
+		        }
+		    }, {
+		        getAverage: function() {
+		            return (this.hits / this.atbats).toFixed(3);
+		        }
+		    });
+
+		    Dummy = can.Control({
+		        init: function (element, options) {
+		            var self = this;
+
+		            // Just some property on the control
+		            this.counter = 0;
+
+		            can.when(Stat.findAll()).then(function(stats) {
+
+		            	// Save a copy of the stats objects
+		                self.stats = stats;
+
+		                stats.each(function(s) {
+		                	$('.data').append('<div>Name: ' + s.name + ': ' + s.homeruns + ' (' + s.getAverage() + ')<div>');
+		                });
+		            });
+		        },
+
+		        '{Stat} change': function() {
+		        	console.log('changed');
+		        	console.dir(arguments);
+		        },
+
+		        // Sets up live binding
+		        '.setup click': function (el, ev) {
+		            this.element.find('div').append(can.view('dummyEJS', {
+		                stats: this.stats
+		            }));
+		        },
+
+		        // Add a home run to each players stats
+		        '.addHomer click': function (el, ev) {
+		        	$('.data').empty();
+
+		            this.stats.each(function(s) {
+		                s.attr('homeruns', s.attr('homeruns') + 1);
+		                $('.data').append('<div>Name: ' + s.name + ': ' + s.homeruns + ' (' + (s.hits / s.atbats).toFixed(3) + ')<div>');
+		            });
+		        },
+
+		        // Fetch stats data from the server (fixture)
+		        '.fetch click': function (el, ev) {
+		            can.when(Stat.findAll()).then(function (stats) {
+		            	$('.data').empty();
+		                self.stats = stats;
+
+		                stats.each(function(s) {
+		                	$('.data').append('<div>Name: ' + s.name + ': ' + s.homeruns + ' (' + (s.hits / s.atbats).toFixed(3) + ')<div>');
+		                })
+		            });
+		        },
+
+		        // Start polling
+		        '.poll click': function (el, ev) {
+		            this.poll();
+		        },
+
+		        // Stop polling
+		        '.stop click': function (el, ev) {
+		            clearTimeout(this.timeoutId);
+		        },
+
+		        // This polling function 
+		        poll: function () {
+
+		        	// Increment the counter
+		        	this.counter = this.counter + 1;
+
+		        	// Fetch stats from server
+		            can.when(Stat.findAll()).then(function(stats) {
+		            	$('.data').empty();
+
+		            	// Update the control's copy of the stats objects
+		                self.stats = stats;
+
+		            	stats.each(function(s) {
+		            		s.attr('homeruns', Math.floor(Math.random() * 60 + 1));
+		                	$('.data').append('<div>Name: ' + s.name + ': ' + s.homeruns + ' (' + (s.hits / s.atbats).toFixed(3) + ')<div>');
+		                })
+		            });
+
+		            // Store the timer ID so we can cancel the polling
+		            this.timeoutId = setTimeout(this.proxy('poll'), 5000);
+		        }
+		    });
+
+		    new Dummy('#dummy');
+
+		});
+	</script>
+</body>
+</html>
