@@ -18,12 +18,6 @@
 	    <div class="data"></div>
 	</div>
 
-	<script id="dummyEJS" type="text/ejs">
-	    <% stats.each(function(s) { %>
-	        Name: <%= s.name %>: <%= s.homeruns %> (<%= s.getAverage() %>)<br/>
-	    <% }) %>
-	</script>
-
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
 	<script src="http://canjs.com/release/latest/can.jquery.js"></script>
 	<script src="http://canjs.com/release/latest/can.construct.proxy.js"></script>
@@ -60,40 +54,6 @@
 		                stats.each(function(s) {
 		                	$('.data').append('<div>Name: ' + s.name + ': ' + s.homeruns + ' (' + s.getAverage() + ')<div>');
 		                });
-		            });
-		        },
-
-		        '{Stat} change': function() {
-		        	console.log('changed');
-		        	console.dir(arguments);
-		        },
-
-		        // Sets up live binding
-		        '.setup click': function (el, ev) {
-		            this.element.find('div').append(can.view('dummyEJS', {
-		                stats: this.stats
-		            }));
-		        },
-
-		        // Add a home run to each players stats
-		        '.addHomer click': function (el, ev) {
-		        	$('.data').empty();
-
-		            this.stats.each(function(s) {
-		                s.attr('homeruns', s.attr('homeruns') + 1);
-		                $('.data').append('<div>Name: ' + s.name + ': ' + s.homeruns + ' (' + (s.hits / s.atbats).toFixed(3) + ')<div>');
-		            });
-		        },
-
-		        // Fetch stats data from the server (fixture)
-		        '.fetch click': function (el, ev) {
-		            can.when(Stat.findAll()).then(function (stats) {
-		            	$('.data').empty();
-		                self.stats = stats;
-
-		                stats.each(function(s) {
-		                	$('.data').append('<div>Name: ' + s.name + ': ' + s.homeruns + ' (' + (s.hits / s.atbats).toFixed(3) + ')<div>');
-		                })
 		            });
 		        },
 
