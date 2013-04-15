@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Memory Leak Test</title>
+	<title>Memory Leak Test - No Fixtures</title>
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 	<![endif]-->
 </head>
 <body>
 	<div id="dummy">
-		Click "Setup Live Binding" to initialize live binding<br/><br/>
+		Click "Setup Live Binding" to initialize live binding and then click "Start Polling"<br/><br/>
 	    <button class="setup">Setup Live Binding</button>
-	    <button class="addHomer">Add Homer</button>
-	    <button class="fetch">Fetch From Server</button>
+	    <button class="addHomer">Add Home Run</button>
+	    <button class="fetch">Execute findAll One Time</button>
 	    <button class="poll">Start Polling</button>
 	    <button class="stop">Stop Polling</button><br/><br/>
 	    <div></div>
@@ -20,7 +20,7 @@
 
 	<script id="dummyEJS" type="text/ejs">
 	    <% stats.each(function(s) { %>
-	        Name: <%= s.attr('name') %>: <%= s.attr('homeruns') %> (<%= s.getAverage() %>)<br/>
+	        <div>Name: <%= s.attr('name') %>: <%= s.attr('homeruns') %> (<%= s.getAverage() %>)</div>
 	    <% }) %>
 	</script>
 

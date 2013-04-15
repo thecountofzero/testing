@@ -9,10 +9,10 @@
 </head>
 <body>
 	<div id="dummy">
-		Click "Setup Live Binding" to initialize live binding<br/><br/>
+		Click "Setup Live Binding" to initialize live binding and then click "Start Polling"<br/><br/>
 	    <button class="setup">Setup Live Binding</button>
 	    <button class="addHomer">Add Home Run</button>
-	    <button class="fetch">Fetch From Server</button>
+	    <button class="fetch">Execute findAll One Time</button>
 	    <button class="poll">Start Polling</button>
 	    <button class="stop">Stop Polling</button><br/><br/>
 	    <div></div>
@@ -88,16 +88,6 @@
 		        // Stop polling
 		        '.stop click': function (el, ev) {
 		            clearTimeout(this.timeoutId);
-		        },
-
-		        // This polling function just updates the stats data without making a call to the server
-		        updater: function () {
-		            this.stats.each(function(s) {
-		                s.attr('homeruns', s.attr('homeruns') + 1);
-		                s.attr('atbats', s.attr('atbats') + 3);
-		                s.attr('hits', s.attr('hits') + 1);
-		            });
-		            this.timeoutId = setTimeout(this.proxy('poll'), 3000);
 		        },
 
 		        // This polling function 
